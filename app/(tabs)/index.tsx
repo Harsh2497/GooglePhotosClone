@@ -8,6 +8,9 @@ import { ScreenContent } from '~/components/ScreenContent';
 
 export default function Home() {
   const [localAssets, setLocalAssets] = useState<MediaLibrary.Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [endCursor, setEndCursor] = useState<string | undefined>();
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
   useEffect(() => {
@@ -23,8 +26,15 @@ export default function Home() {
   }, [permissionResponse]);
 
   const loadLocalAssets = async () => {
-    const localAssets = await MediaLibrary.getAssetsAsync();
-    setLocalAssets(localAssets.assets);
+    if (isLoading || !hasNextPage) {
+      return;
+    }
+    setIsLoading(true);
+    const mediaAssets = await MediaLibrary.getAssetsAsync({ after: endCursor });
+    setLocalAssets((existingItems) => [...existingItems, ...mediaAssets.assets]);
+    setHasNextPage(mediaAssets.hasNextPage);
+    setEndCursor(mediaAssets.endCursor);
+    setIsLoading(false);
   };
 
   const renderLocalItem = ({ item }: { item: MediaLibrary.Asset }) => {
@@ -40,10 +50,11 @@ export default function Home() {
         numColumns={4}
         data={localAssets}
         renderItem={renderLocalItem}
-        // columnWrapperStyle={{ gap: 2 }} // React native style
-        columnWrapperClassName="gap-[2px]" // Nativewind Style
-        // contentContainerStyle={{ gap: 2 }} // React native style
-        contentContainerClassName="gap-[2px]" // Nativewind Style
+        columnWrapperClassName="gap-[2px]" // Nativewind Style of columnWrapperStyle
+        contentContainerClassName="gap-[2px]" // Nativewind Style of contentContainerStyle
+        onEndReached={loadLocalAssets}
+        refreshing={isLoading}
+        onEndReachedThreshold={1}
       />
     </>
   );
