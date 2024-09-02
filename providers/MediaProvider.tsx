@@ -4,12 +4,14 @@ import * as MediaLibrary from 'expo-media-library';
 type MediaContextType = {
   localAssets: MediaLibrary.Asset[];
   loadLocalAssets: () => void;
+  getAssetById: (id: string) => MediaLibrary.Asset | undefined;
   isLoading: boolean;
 };
 
 const MediaContext = createContext<MediaContextType>({
   localAssets: [],
   loadLocalAssets: () => {},
+  getAssetById: () => undefined,
   isLoading: false,
 });
 
@@ -45,8 +47,13 @@ const MediaContextProvider = ({ children }: PropsWithChildren) => {
     setIsLoading(false);
   };
 
+  const getAssetById = (id: string) => {
+    const asset = localAssets.find((i) => i.id === id);
+    return asset;
+  };
+
   return (
-    <MediaContext.Provider value={{ localAssets, loadLocalAssets, isLoading }}>
+    <MediaContext.Provider value={{ localAssets, loadLocalAssets, isLoading, getAssetById }}>
       {children}
     </MediaContext.Provider>
   );
